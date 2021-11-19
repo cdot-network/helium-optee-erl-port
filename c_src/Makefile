@@ -25,8 +25,8 @@ OBJCOPY ?= $(CROSS_COMPILE)objcopy
 OBJDUMP ?= $(CROSS_COMPILE)objdump
 READELF ?= $(CROSS_COMPILE)readelf
 
-CFLAGS ?= -O3 -std=c99 -finline-functions -Wall -Wmissing-prototypes
-CXXFLAGS ?= -O3 -finline-functions -Wall
+CFLAGS ?= -g -O0 -std=c99 -finline-functions -Wall -Wmissing-prototypes
+CXXFLAGS ?= -g -O0 -finline-functions -Wall
 
 # $(TEEC_EXPORT)/include has sys/cdefs, will conflict with /usr/include/sys/cdefs
 # but $(TEEC_EXPORT) should be used for user ta, not for host

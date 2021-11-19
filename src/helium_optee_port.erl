@@ -8,7 +8,7 @@ start(ExtPrg) ->
 init(ExtPrg) ->
     register(helium_optee_p, self()),
     process_flag(trap_exit, true),
-    Port = open_port({spawn, ExtPrg}, [{packet, 2}]),
+    Port = open_port({spawn, ExtPrg}, [{packet, 2}, nouse_stdio]),
     loop(Port).
 
 sign(X) ->
@@ -48,7 +48,17 @@ encode({sign, X}) -> [1, X];
 encode({ecdh, Y}) -> [2, Y].
 
 decode([Int]) ->
-     Int.
+    io:format("Received data:[Int]~n"),
+    Int;
+decode([]) ->
+    io:format("Received data:[]~n"),
+    0;
+decode(Int) ->
+    io:format("Received data:Int~n"),
+    Int.
+
+
+
     
                           
     
