@@ -145,7 +145,7 @@ int write_exact(byte *buf, int len) {
       err(1, "write failed: %d", i);
       return i;
     }
-    written = i;
+    written += i;
   }while(written < len);
 
   return len;
