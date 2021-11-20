@@ -74,6 +74,11 @@ int main(int argc, char *argv[]) {
 
     get_args(argc, argv, &key_size, &inbuf, &inbuf_len);
   }
+
+  if(helium_init() < 0) {
+    fprintf(stderr, "failed to init helium\n");
+    exit(1);
+  }
   
   /* printf("start \n"); */
   
@@ -96,6 +101,10 @@ int main(int argc, char *argv[]) {
     buf[0] = res & 0xff;
     write_cmd(buf, 1);
   }
+
+  helium_deinit();
+  fprintf(stderr, "exiting...\n");
+
   return 0;
 }
 
