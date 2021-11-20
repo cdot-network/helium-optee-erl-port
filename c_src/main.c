@@ -12,6 +12,8 @@
 
 #include <ei.h>
 
+#include "helium.h"
+
 #define READ_FD 3
 #define WRITE_FD 4
 

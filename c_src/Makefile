@@ -79,4 +79,4 @@ $(C_SRC_OUTPUT): $(OBJECTS)
 
 clean:
 	@rm -f $(C_SRC_OUTPUT) $(OBJECTS)
-	@rm -rf $(BASEDIR)
+	@rm -rf $(BASEDIR)/priv
