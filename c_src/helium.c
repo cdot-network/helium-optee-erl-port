@@ -14,6 +14,8 @@
 
 #include "helium.h"
 
+__BEGIN_DECLS
+
 static int8_t initialized = 0;
 static TEEC_Context ctx;
 static TEEC_Session sess;
@@ -73,43 +75,43 @@ int8_t helium_deinit() {
   return 1;
 }
 
-void helium_thread_worker() {
-	uint32_t err_origin;
-    TEEC_Result res;
-	size_t key_size;
-	void *inbuf;
-	size_t inbuf_len;
-	size_t n;
+int8_t gen_ecdsa_keypair() {
+  uint32_t err_origin;
+  TEEC_Result res;
+  TEEC_Operation op;
+  const size_t key_size = 256;
+  
+  memset(&op, 0, sizeof(op));
+  op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+                                   TEEC_NONE, TEEC_NONE);
+  op.params[0].value.a = key_size;
 
-    /*
-     * Execute a function in the TA by invoking it, in this case
-     * we're incrementing a number.
-     *
-     * The value of command ID part and how the parameters are
-     * interpreted is part of the interface provided by the TA.
-     */
-	/* Clear the TEEC_Operation struct */
-	memset(&op, 0, sizeof(op));
-
-	/*
-	 * Prepare the argument. Pass a value in the first parameter,
-	 * the remaining three parameters are unused.
-	 */
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INOUT, TEEC_NONE,
-					 TEEC_NONE, TEEC_NONE);
-	op.params[0].value.a = 42;
-
-	/*
-	 * TA_HELLO_WORLD_CMD_INC_VALUE is the actual function in the TA to be
-	 * called.
-	 */
-	printf("Invoking TA to increment %d\n", op.params[0].value.a);
-	res = TEEC_InvokeCommand(&sess, TA_HELIUM_CMD_INC_VALUE, &op,
-				 &err_origin);
-	if (res != TEEC_SUCCESS)
-		errx(1, "TEEC_InvokeCommand failed with code 0x%x origin 0x%x",
-			res, err_origin);
-	printf("TA incremented value to %d\n", op.params[0].value.a);
-
-
+  res = TEEC_InvokeCommand(&sess, TA_HELIUM_CMD_GEN_ECDSA_KEYPAIR, &op, &err_origin);
+  if (res)
+    teec_err(res, err_origin, "TEEC_InvokeCommand(TA_HELIUM_CMD_GEN_ECDSA_KEYPAIR)");
+  return 0;
 }
+
+int8_t ecdsa_sign(void* inbuf, size_t inbuf_len, void* outbuf, size_t* outbuf_len) {
+  uint32_t err_origin;
+  TEEC_Operation op;
+  TEEC_Result res;
+  
+  memset(&op, 0, sizeof(op));
+  op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+                                   TEEC_MEMREF_TEMP_OUTPUT,
+                                   TEEC_NONE, TEEC_NONE);
+  op.params[0].tmpref.buffer = inbuf;
+  op.params[0].tmpref.size = inbuf_len;
+  op.params[1].tmpref.buffer = outbuf;
+  op.params[1].tmpref.size = *outbuf_len;
+  res = TEEC_InvokeCommand(&sess, TA_HELIUM_CMD_ECDSA_SIGN, &op, &err_origin);
+  if (res) {
+    teec_err(res, err_origin, "TEEC_InvokeCommand(TA_HELIUM_CMD_ECDSA_SIGN)");
+    return 1;
+  }
+
+  return 0;
+}
+
+__END_DECLS

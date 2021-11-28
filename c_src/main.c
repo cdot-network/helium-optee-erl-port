@@ -13,6 +13,7 @@
 #include <ei.h>
 
 #include "helium.h"
+#include "helium_cmd.h"
 
 #define READ_FD 3
 #define WRITE_FD 4
@@ -89,12 +90,14 @@ int main(int argc, char *argv[]) {
     /* printf("read_cmd(%d, %d)\n", fn, arg); */
 
     switch(fn) {
-    case 1:
+    case GenerateECDSAKeypair:
       res = 10;
       break;
-    case 2:
-    default:
+    case ECDSASign:
       res = 20;
+      break;
+    default:
+      res = -1; /* non supported */
       break;
     }
 
