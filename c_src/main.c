@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
   }
 
   helium_deinit();
-  fprintf(stderr, "exiting...\n");
+  fprintf(stderr, "%s is exiting...\n", argv[0]);
 
   return 0;
 }

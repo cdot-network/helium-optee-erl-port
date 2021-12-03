@@ -1,6 +1,6 @@
 -module(helium_optee_port).
 -export([start/1, init/1]).
--export([sign/1, ecdh/1]).
+-export([sign/1, ecdh/1, gen_ecdsa_keypair/0]).
 
 start(ExtPrg) ->
     spawn(?MODULE, init, [ExtPrg]).
@@ -16,6 +16,9 @@ sign(X) ->
 
 ecdh(Y) ->
     call_port({ecdh, Y}).
+
+gen_ecdsa_keypair() ->
+    call_port({gen_ecdsa_keypair}).
 
 call_port(Msg) ->
     helium_optee_p ! {call, self(), Msg},
@@ -44,8 +47,9 @@ loop(Port) ->
     end.
 
 
-encode({sign, X}) -> [1, X];
-encode({ecdh, Y}) -> [2, Y].
+encode({gen_ecdsa_sign}) -> [1, 0];
+encode({ecdsa_sign, X}) -> [2, X];
+encode({ecdh, Y}) -> [3, Y].
 
 decode([Int]) ->
     io:format("Received data:[Int]~n"),
