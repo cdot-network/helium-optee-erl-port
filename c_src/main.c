@@ -71,7 +71,6 @@ int main(int argc, char *argv[]) {
     size_t key_size;
 	void *inbuf;
 	size_t inbuf_len;
-	size_t n;
 
     get_args(argc, argv, &key_size, &inbuf, &inbuf_len);
   }
@@ -91,10 +90,32 @@ int main(int argc, char *argv[]) {
 
     switch(fn) {
     case GenerateECDSAKeypair:
-      res = 10;
+      {
+        int ret = gen_ecdsa_keypair();
+        res = 10;
+        if ( 0 != ret ) {
+          fprintf(stderr, "failed to gen ecdsa keypair: %d\n", ret);
+        }
+      }
       break;
     case ECDSASign:
-      res = 20;
+      {
+        res = 20;
+        unsigned char signature[64];
+        size_t sign_len = sizeof(signature);
+        int ret = ecdsa_sign(&arg, sizeof(arg), signature, &sign_len);
+        if ( 0 == ret ) {
+          fprintf(stderr, "signature len: %lu\n", sign_len);
+          fprintf(stderr, "signature: ");
+          for(int i = 0; i < sign_len; i ++) {
+            fprintf(stderr, "%02X ", signature[i]);
+          }
+          fprintf(stderr, "\n");
+        }
+        else {
+          fprintf(stderr, "failed to ecdsa_sign: %d\n", ret);
+        }
+      }
       break;
     default:
       res = -1; /* non supported */
