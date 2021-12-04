@@ -53,7 +53,7 @@ loop(Port) ->
     end.
 
 
-encode({gen_ecdsa_sign}) -> [1, 0];
+encode({gen_ecdsa_keypair}) -> [1, 0];
 encode({ecdsa_sign, X}) -> [2, X];
 encode({ecdh, Y}) -> [3, Y].
 
