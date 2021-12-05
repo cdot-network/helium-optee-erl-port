@@ -17,9 +17,6 @@ init(ExtPrg) ->
     Port = open_port({spawn, ExtPrg}, [{packet, 2}, nouse_stdio]),
     loop(Port).
 
-sign(X) ->
-    call_port({sign, X}).
-
 ecdh(Y) ->
     call_port({ecdh, Y}).
 
