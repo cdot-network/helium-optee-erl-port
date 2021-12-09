@@ -1,6 +1,6 @@
 -module(helium_optee_port).
 -export([start/0, start/1, init/1, stop/0]).
--export([sign/1, ecdh/1, gen_ecdsa_keypair/0, ecdsa_sign/1]).
+-export([ecdh/1, gen_ecdsa_keypair/0, ecdsa_sign/1]).
 
 start() ->
     start("priv/helium-optee-erl-port").
