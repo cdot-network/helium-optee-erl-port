@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <time.h>
 #include <limits.h>
 #include <unistd.h>
@@ -14,16 +15,6 @@
 
 #include "helium.h"
 #include "helium_cmd.h"
-
-#define READ_FD 3
-#define WRITE_FD 4
-
-typedef unsigned char byte;
-
-int read_cmd(byte *buf);
-int write_cmd(byte *buf, int len);
-int read_exact(byte *buf, int len);
-int write_exact(byte *buf, int len);
 
 static void usage(int argc, char *argv[])
 {
@@ -64,7 +55,7 @@ static void get_args(int argc, char *argv[], size_t *key_size, void **inbuf,
 }
 
 int main(int argc, char *argv[]) {
-  byte buf[100] = {0};
+  uint8_t buf[100] = {0};
   int fn, arg, res;
 
   if(argc > 1) {
@@ -132,56 +123,3 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-int read_cmd(byte *buf) {
-  int len;
-
-  if(read_exact(buf, 2) != 2) {
-    return -1;
-  }
-
-  len = (buf[0] << 8) | buf[1];
-  return read_exact(buf, len);
-}
-
-int write_cmd(byte *buf, int len) {
-  int i;
-  printf("write_cmd:len:%d\n", len);
-  byte li;
-  li = (len >> 8) & 0xff;
-  if((i = write_exact(&li, 1)) < 0) {
-    return i;
-  }
-  li = (len & 0xff);
-  if((i = write_exact(&li, 1)) < 0) {
-    return i;
-  }
-  return write_exact(buf, len);
-}
-
-int read_exact(byte *buf, int len) {
-  int i, got = 0;
-  do {
-    if((i = read(READ_FD, buf+got, len-got)) <= 0) {
-      return i;
-    }
-
-    got += i;
-  } while(got < len);
-
-  return len;
-}
-
-int write_exact(byte *buf, int len) {
-  int i, written = 0;
-
-  /* printf("write_exact(%d):0x%x\n", len, buf[0]); */
-  do {
-    if((i = write(WRITE_FD, buf+written, len - written)) <= 0) {
-      err(1, "write failed: %d", i);
-      return i;
-    }
-    written += i;
-  }while(written < len);
-
-  return len;
-}
