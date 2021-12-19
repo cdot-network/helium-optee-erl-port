@@ -11,7 +11,6 @@
 #include <netinet/in.h>
 #include <err.h>
 
-#include "helium.h"
 #include "helium_cmd.h"
 
 static void usage(int argc, char *argv[])
@@ -71,54 +70,6 @@ int main(int argc, char *argv[]) {
 
   // this is a block (while(1)) func calling
   helium_handle_erlcmd(NULL);
-  
-  /* // printf("start \n");
-  
-  while(read_cmd(buf) > 0) {
-    fn = buf[0];
-    arg = buf[1];
-
-    // printf("read_cmd(%d, %d)\n", fn, arg);
-
-    switch(fn) {
-    case GenerateECDSAKeypair:
-      {
-        int ret = gen_ecdsa_keypair();
-        res = 10;
-        if ( 0 != ret ) {
-          fprintf(stderr, "failed to gen ecdsa keypair: %d\n", ret);
-        }
-      }
-      break;
-    case ECDSASign:
-      {
-        res = 20;
-        unsigned char signature[64];
-        size_t sign_len = sizeof(signature);
-        int ret = ecdsa_sign(&arg, sizeof(arg), signature, &sign_len);
-        if ( 0 == ret ) {
-          fprintf(stderr, "signature len: %lu\n", sign_len);
-          fprintf(stderr, "signature: ");
-          for(int i = 0; i < sign_len; i ++) {
-            fprintf(stderr, "%02X ", signature[i]);
-          }
-          fprintf(stderr, "\n");
-        }
-        else {
-          fprintf(stderr, "failed to ecdsa_sign: %d\n", ret);
-        }
-      }
-      break;
-    default:
-      res = -1; // non supported
-      break;
-    }
-
-    buf[0] = res & 0xff;
-    write_cmd(buf, 1);
-  }
-
-  */
   
   helium_deinit();
   fprintf(stderr, "%s is exiting...\n", argv[0]);
