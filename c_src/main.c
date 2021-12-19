@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
   }
 
   // this is a block (while(1)) func calling
-  helium_handle_erlcmd();
+  helium_handle_erlcmd(NULL);
   
   /* // printf("start \n");
   
