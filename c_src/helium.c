@@ -1,5 +1,4 @@
 #include <err.h>
-#include <sys/cdefs.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,9 +13,7 @@
 
 #include "helium.h"
 
-__BEGIN_DECLS
-
-static int8_t initialized = 0;
+static int initialized = 0;
 static TEEC_Context ctx;
 static TEEC_Session sess;
 static TEEC_Operation op;
@@ -26,7 +23,7 @@ static void teec_err(TEEC_Result res, uint32_t eo, const char *str)
 {
 	errx(1, "%s: %#" PRIx32 " (error origin %#" PRIx32 ")", str, res, eo);
 }
-int8_t helium_init() {
+int helium_init() {
   uint32_t err_origin;
   TEEC_Result res;
 
@@ -53,7 +50,7 @@ int8_t helium_init() {
   return 1;
 }
 
-int8_t helium_deinit() {
+int helium_deinit() {
   if(!initialized) {
     return 0;
   }
@@ -75,7 +72,7 @@ int8_t helium_deinit() {
   return 1;
 }
 
-int8_t gen_ecdsa_keypair() {
+int gen_ecdsa_keypair() {
   uint32_t err_origin;
   TEEC_Result res;
   TEEC_Operation op;
@@ -92,7 +89,7 @@ int8_t gen_ecdsa_keypair() {
   return 0;
 }
 
-int8_t ecdsa_sign(void* inbuf, size_t inbuf_len, void* outbuf, size_t* outbuf_len) {
+int ecdsa_sign(void* inbuf, size_t inbuf_len, void* outbuf, size_t* outbuf_len) {
   uint32_t err_origin;
   TEEC_Operation op;
   TEEC_Result res;
@@ -113,5 +110,3 @@ int8_t ecdsa_sign(void* inbuf, size_t inbuf_len, void* outbuf, size_t* outbuf_le
 
   return 0;
 }
-
-__END_DECLS

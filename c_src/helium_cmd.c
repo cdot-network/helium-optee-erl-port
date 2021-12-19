@@ -10,6 +10,7 @@
 
 #include "erlcmd.h"
 #include "helium_cmd.h"
+#include "helium.h"
 
 #define DEBUG
 #ifdef DEBUG
@@ -18,9 +19,26 @@
 #define debug(...)
 #endif
 
+/*
+ * https://stackoverflow.com/questions/3437404/min-and-max-in-c
+ * https://gcc.gnu.org/onlinedocs/gcc-3.4.6/gcc/Min-and-Max.html
+ */
+#define MAX(a,b) \
+  ({ __typeof__ (a) _a = (a); \
+  __typeof__ (b) _b = (b); \
+  _a > _b ? _a : _b; })
+
+#define MIN(a,b) \
+  ({ __typeof__ (a) _a = (a); \
+  __typeof__ (b) _b = (b); \
+  _a > _b ? _b : _a; })
+
 #define CMD_BUFFER_SIZE 1024
 
 static void helium_cmd_handler(struct erlcmd_buffer *p_cmd_buffer);
+static void helium_gen_ecdsa_keypair(const char *pbuf);
+static void helium_ecdsa_sign(const char *pbuf);
+static void helium_err_reply_send(const char *cmd, const char *msg);
 
 void helium_handle_erlcmd(erlcmd_handler_fp handler) {
   struct erlcmd_buffer cmd_buffer;
@@ -84,17 +102,55 @@ void helium_cmd_handler(struct erlcmd_buffer *p_cmd_buffer) {
   debug("atom command: %s", cmd);
 
   if (strcmp(cmd, "gen_ecdsa_keypair") == 0) {
-    debug("gen_ecdsa_keypair");
+    helium_gen_ecdsa_keypair(p_cmd_buffer->pbuf + buf_idx);
+    
   } else if (strcmp(cmd, "ecdsa_sign") == 0) {
-    debug("ecdsa_sign");
+    helium_ecdsa_sign(p_cmd_buffer->pbuf + buf_idx);
+  } else {
+    helium_err_reply_send(cmd, "not supported");
   }
+}
 
+void helium_gen_ecdsa_keypair(const char *pbuf) {
+  int r = gen_ecdsa_keypair();
+  if (0 == r) {
+    char resp[256];
+    int resp_idx = sizeof(uint16_t) + 1; // Payload length + 'Tag' byte
+    resp[2] = 0; // Reply
+    ei_encode_version(resp, &resp_idx);
+    /* ei_encode_atom(resp, &resp_idx, "reply"); */
+    ei_encode_long(resp, &resp_idx, 1);
+
+    erlcmd_send(resp, resp_idx);
+  }
+  else {
+    helium_err_reply_send("gen_ecdsa_keypair", "execution failed");
+  }
+}
+
+void helium_ecdsa_sign(const char *pbuf) {
+  helium_err_reply_send("ecdsa_sign", "not implemented");
+}
+
+void helium_err_reply_send(const char *cmd, const char *msg) {
   char resp[256];
   int resp_idx = sizeof(uint16_t) + 1; // Payload length + 'Tag' byte
   resp[2] = 0; // Reply
+
   ei_encode_version(resp, &resp_idx);
-  /* ei_encode_atom(resp, &resp_idx, "reply"); */
-  ei_encode_long(resp, &resp_idx, 1);
+
+  // format: {err, {cmd, Msg}}
+  ei_encode_tuple_header(resp, &resp_idx, 2);
+  ei_encode_atom(resp, &resp_idx, "err");
+
+  ei_encode_tuple_header(resp, &resp_idx, 2);
+  ei_encode_atom(resp, &resp_idx, cmd);
+  const size_t msg_len = strlen(msg);
+  const size_t left_len = sizeof(resp) - resp_idx - 1 /* tag */ ;
+  if (msg_len > left_len) {
+    fprintf(stderr, "%s: msg is too long\n", __FILE__);
+  }
+  ei_encode_string_len(resp, &resp_idx, msg, MIN(msg_len, left_len));
 
   erlcmd_send(resp, resp_idx);
 }

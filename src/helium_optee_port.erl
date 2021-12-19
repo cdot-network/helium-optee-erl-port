@@ -32,6 +32,7 @@ call_port(Msg) ->
     helium_optee_p ! {call, self(), Msg},
     receive
         {helium_optee, Result} ->
+            io:format("call_port: ~w~n", [Result]),
             Result
     end.
 
@@ -41,6 +42,7 @@ loop(Port) ->
             Port ! {self(), {command, term_to_binary(Msg)}},
             receive
                 {Port, {data, <<?REPLY, Response/binary>>}} ->
+                    io:format("~w response: ~w~n", [Msg, Response]),
                     Caller ! {helium_optee, binary_to_term(Response)}
             end,
             loop(Port);
