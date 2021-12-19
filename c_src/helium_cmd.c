@@ -112,17 +112,29 @@ void helium_cmd_handler(struct erlcmd_buffer *p_cmd_buffer) {
   debug("atom command: %s", cmd);
 
   if (strcmp(cmd, HELIUM_CMD_GEN_ECDSA_KEYPAIR) == 0) {
+
     helium_gen_ecdsa_keypair(p_cmd_buffer->pbuf + buf_idx);
+
   } else if (strcmp(cmd, HELIUM_CMD_ECDSA_SIGN) == 0) {
+
     helium_ecdsa_sign(p_cmd_buffer->pbuf + buf_idx);
+
   } else if (strcmp(cmd, HELIUM_CMD_ECDH) == 0) {
+
     helium_ecdh(p_cmd_buffer->pbuf + buf_idx);
+
   } else if (strcmp(cmd, HELIUM_CMD_OPTEE_START) == 0) {
+
     helium_optee_start(p_cmd_buffer->pbuf + buf_idx);
+
   } else if (strcmp(cmd, HELIUM_CMD_OPTEE_STOP) == 0) {
+
     helium_optee_stop(p_cmd_buffer->pbuf + buf_idx);
+
   } else {
+
     helium_err_reply_send(cmd, "not supported");
+
   }
 }
 
