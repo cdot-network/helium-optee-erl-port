@@ -12,10 +12,6 @@ typedef enum CmdType {
 
 // block (while) calling
 void helium_handle_erlcmd(erlcmd_handler_fp handler);
-// int read_cmd(uint8_t *buf);
-// int write_cmd(uint8_t *buf, int len);
-// int read_exact(uint8_t *buf, int len);
-// int write_exact(uint8_t *buf, int len);
 
 __END_DECLS
   
