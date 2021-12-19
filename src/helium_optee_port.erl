@@ -5,7 +5,7 @@
 -define(REPLY, 0).
 
 start() ->
-    start("priv/helium-optee-erl-port").
+    start(code:priv_dir(helium_optee_port) ++ "/helium-optee-erl-port").
 
 start(ExtPrg) ->
     spawn(?MODULE, init, [ExtPrg]).
