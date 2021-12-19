@@ -19,8 +19,10 @@
 #define debug(...)
 #endif
 
-#define HELIUM_CMD_OPTEE_START  "optee_start"
-#define HELIUM_CMD_OPTEE_STOP   "optee_stop"
+#define HELIUM_CMD_OPTEE_START         "optee_start"
+#define HELIUM_CMD_OPTEE_STOP          "optee_stop"
+#define HELIUM_CMD_GEN_ECDSA_KEYPAIR   "gen_ecdsa_keypair"
+#define HELIUM_CMD_ECDSA_SIGN          "ecdsa_sign"
 
 /*
  * https://stackoverflow.com/questions/3437404/min-and-max-in-c
@@ -107,9 +109,9 @@ void helium_cmd_handler(struct erlcmd_buffer *p_cmd_buffer) {
 
   debug("atom command: %s", cmd);
 
-  if (strcmp(cmd, "gen_ecdsa_keypair") == 0) {
+  if (strcmp(cmd, HELIUM_CMD_GEN_ECDSA_KEYPAIR) == 0) {
     helium_gen_ecdsa_keypair(p_cmd_buffer->pbuf + buf_idx);
-  } else if (strcmp(cmd, "ecdsa_sign") == 0) {
+  } else if (strcmp(cmd, HELIUM_CMD_ECDSA_SIGN) == 0) {
     helium_ecdsa_sign(p_cmd_buffer->pbuf + buf_idx);
   } else if (strcmp(cmd, HELIUM_CMD_OPTEE_START) == 0) {
     helium_optee_start(p_cmd_buffer->pbuf + buf_idx);
@@ -147,12 +149,12 @@ void helium_gen_ecdsa_keypair(const char *pbuf) {
     erlcmd_send(resp, resp_idx);
   }
   else {
-    helium_err_reply_send("gen_ecdsa_keypair", "execution failed");
+    helium_err_reply_send(HELIUM_CMD_GEN_ECDSA_KEYPAIR, "execution failed");
   }
 }
 
 void helium_ecdsa_sign(const char *pbuf) {
-  helium_err_reply_send("ecdsa_sign", "not implemented");
+  helium_err_reply_send(HELIUM_CMD_ECDSA_SIGN, "not implemented");
 }
 
 void helium_reply_send_simple(const char *cmd, const char *atom) {
