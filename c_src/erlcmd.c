@@ -5,8 +5,17 @@
 #include <errno.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <poll.h>
 
 #include "erlcmd.h"
+
+#define DEBUG
+#ifdef DEBUG
+#include <stdio.h>
+#define debug(...) do { fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\r\n"); } while(0)
+#else
+#define debug(...)
+#endif
 
 static size_t erlcmd_try_dispatch(struct erlcmd_buffer *p_cmd_buffer);
 
@@ -76,3 +85,20 @@ void erlcmd_read_buffer(struct erlcmd_buffer *p_cmd_buffer) {
   }
 }
 
+void erlcmd_send(char *resp, size_t len) {
+  debug("erlcmd_send: len: %lu", len);
+  uint16_t be_len = htons(len - sizeof(be_len));
+  memcpy(resp, &be_len, sizeof(be_len));
+  
+  int i, written = 0;
+  do {
+    if((i = write(WRITE_FD, resp+written, len - written)) < 0) {
+      if (errno == EINTR) continue;
+
+      err(EXIT_FAILURE, "erlcmd_send");
+    }
+    written += i;
+  }while(written < len);
+
+  debug("erlcmd_send finished");
+}

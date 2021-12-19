@@ -11,8 +11,6 @@
 #include <netinet/in.h>
 #include <err.h>
 
-#include <ei.h>
-
 #include "helium.h"
 #include "helium_cmd.h"
 
