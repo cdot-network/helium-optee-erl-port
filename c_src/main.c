@@ -70,14 +70,17 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "failed to init helium\n");
     exit(1);
   }
+
+  // this is a block (while(1)) func calling
+  helium_handle_erlcmd();
   
-  /* printf("start \n"); */
+  /* // printf("start \n");
   
   while(read_cmd(buf) > 0) {
     fn = buf[0];
     arg = buf[1];
 
-    /* printf("read_cmd(%d, %d)\n", fn, arg); */
+    // printf("read_cmd(%d, %d)\n", fn, arg);
 
     switch(fn) {
     case GenerateECDSAKeypair:
@@ -109,7 +112,7 @@ int main(int argc, char *argv[]) {
       }
       break;
     default:
-      res = -1; /* non supported */
+      res = -1; // non supported
       break;
     }
 
@@ -117,6 +120,8 @@ int main(int argc, char *argv[]) {
     write_cmd(buf, 1);
   }
 
+  */
+  
   helium_deinit();
   fprintf(stderr, "%s is exiting...\n", argv[0]);
 
