@@ -19,6 +19,9 @@
 #define debug(...)
 #endif
 
+#define HELIUM_CMD_OPTEE_START  "optee_start"
+#define HELIUM_CMD_OPTEE_STOP   "optee_stop"
+
 /*
  * https://stackoverflow.com/questions/3437404/min-and-max-in-c
  * https://gcc.gnu.org/onlinedocs/gcc-3.4.6/gcc/Min-and-Max.html
@@ -38,7 +41,10 @@
 static void helium_cmd_handler(struct erlcmd_buffer *p_cmd_buffer);
 static void helium_gen_ecdsa_keypair(const char *pbuf);
 static void helium_ecdsa_sign(const char *pbuf);
+static void helium_optee_start(const char *pbuf);
+static void helium_optee_stop(const char *pbuf);
 static void helium_err_reply_send(const char *cmd, const char *msg);
+static void helium_reply_send_simple(const char *cmd, const char *atom);
 
 void helium_handle_erlcmd(erlcmd_handler_fp handler) {
   struct erlcmd_buffer cmd_buffer;
@@ -103,12 +109,29 @@ void helium_cmd_handler(struct erlcmd_buffer *p_cmd_buffer) {
 
   if (strcmp(cmd, "gen_ecdsa_keypair") == 0) {
     helium_gen_ecdsa_keypair(p_cmd_buffer->pbuf + buf_idx);
-    
   } else if (strcmp(cmd, "ecdsa_sign") == 0) {
     helium_ecdsa_sign(p_cmd_buffer->pbuf + buf_idx);
+  } else if (strcmp(cmd, HELIUM_CMD_OPTEE_START) == 0) {
+    helium_optee_start(p_cmd_buffer->pbuf + buf_idx);
+  } else if (strcmp(cmd, HELIUM_CMD_OPTEE_STOP) == 0) {
+    helium_optee_stop(p_cmd_buffer->pbuf + buf_idx);
   } else {
     helium_err_reply_send(cmd, "not supported");
   }
+}
+
+void helium_optee_start(const char *pbuf) {
+  if(helium_init() < 0) {
+    fprintf(stderr, "failed to init helium\n");
+    err(EXIT_FAILURE, "failed to init helium");
+  }
+
+  helium_reply_send_simple(HELIUM_CMD_OPTEE_START, "ok");
+}
+
+void helium_optee_stop(const char *pbuf) {
+  helium_deinit();
+  helium_reply_send_simple(HELIUM_CMD_OPTEE_STOP, "ok");
 }
 
 void helium_gen_ecdsa_keypair(const char *pbuf) {
@@ -130,6 +153,26 @@ void helium_gen_ecdsa_keypair(const char *pbuf) {
 
 void helium_ecdsa_sign(const char *pbuf) {
   helium_err_reply_send("ecdsa_sign", "not implemented");
+}
+
+void helium_reply_send_simple(const char *cmd, const char *atom) {
+  char resp[256];
+  int resp_idx = sizeof(uint16_t) + 1; // Payload length + 'Tag' byte
+  resp[2] = 0; // Reply
+
+  ei_encode_version(resp, &resp_idx);
+
+  // format: {cmd, atom}
+  ei_encode_tuple_header(resp, &resp_idx, 2);
+  ei_encode_atom(resp, &resp_idx, cmd);
+  const size_t atom_len = strlen(atom);
+  const size_t left_len = sizeof(resp) - resp_idx - 1 /* tag */ ;
+  if (atom_len > left_len) {
+    fprintf(stderr, "%s: atom is too long\n", __FILE__);
+  }
+  ei_encode_atom_len(resp, &resp_idx, atom, MIN(atom_len, left_len));
+
+  erlcmd_send(resp, resp_idx);
 }
 
 void helium_err_reply_send(const char *cmd, const char *msg) {
