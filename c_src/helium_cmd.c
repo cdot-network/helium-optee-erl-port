@@ -194,6 +194,8 @@ void helium_reply_send_simple(const char *cmd, const char *atom) {
   }
   ei_encode_atom_len(resp, &resp_idx, atom, MIN(atom_len, left_len));
 
+  // int s = 3;
+  // ei_print_term(stderr, resp, &s);
   erlcmd_send(resp, resp_idx);
 }
 
