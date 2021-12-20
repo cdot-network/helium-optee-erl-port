@@ -5,8 +5,8 @@ __BEGIN_DECLS
 
 /*
   return: 
-    1: initialized,
-    0: already initialized,
+    0: initialized,
+    1: already initialized,
    -1: failed to initialized
 Currently, program will quit when initialized failed
  

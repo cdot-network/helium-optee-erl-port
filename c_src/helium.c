@@ -28,7 +28,7 @@ int helium_init() {
   TEEC_Result res;
 
   if(initialized) {
-    return 0;
+    return 1;
   }
 
   /* Initialize a context connecting us to the TEE */
@@ -47,7 +47,7 @@ int helium_init() {
          res, err_origin);
 
   initialized = 1;
-  return 1;
+  return 0;
 }
 
 int helium_deinit() {
@@ -69,7 +69,7 @@ int helium_deinit() {
 
   initialized = 0;
   
-  return 1;
+  return 0;
 }
 
 int gen_ecdsa_keypair() {
