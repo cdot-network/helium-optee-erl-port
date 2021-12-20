@@ -178,26 +178,53 @@ void helium_ecdh(const char *pbuf) {
   helium_err_reply_send(HELIUM_CMD_ECDH, "not implemented");
 }
 
-void helium_reply_send_simple(const char *cmd, const char *atom) {
-  char resp[256];
+void helium_reply_send(const char *cmd, const char *term, const size_t term_len) {
+  char resp[1024];
   int resp_idx = sizeof(uint16_t) + 1; // Payload length + 'Tag' byte
   resp[2] = 0; // Reply
 
   ei_encode_version(resp, &resp_idx);
 
-  // format: {cmd, atom}
+  // format: {cmd, {Term}}
   ei_encode_tuple_header(resp, &resp_idx, 2);
-  ei_encode_atom(resp, &resp_idx, cmd);
-  const size_t atom_len = strlen(atom);
+  const size_t cmd_len = strlen(cmd);
   const size_t left_len = sizeof(resp) - resp_idx - 1 /* tag */ ;
+  if (cmd_len > left_len) {
+    fprintf(stderr, "%s: reply cmd (%s) is too long\n", __FILE__, cmd);
+    helium_err_reply_send("err", "atom is too long");
+    return;
+  }
+  ei_encode_atom(resp, &resp_idx, cmd);
+
+  const size_t max_term_len = sizeof(resp) - resp_idx;
+  if (term_len > max_term_len) {
+    fprintf(stderr, "%s: reply(cmd: %s) term is too long:\n", __FILE__, cmd);
+    int i = 0;
+    ei_print_term(stderr, term, &i);
+    fprintf(stderr, "\n");
+    helium_err_reply_send(cmd, "term is too long");
+    return;
+  }
+  memcpy(resp + resp_idx, term, term_len);
+  resp_idx += term_len;
+
+  // int s = 3;
+  // ei_print_term(stderr, resp, &s);
+  erlcmd_send(resp, resp_idx);
+}
+
+void helium_reply_send_simple(const char *cmd, const char *atom) {
+  char resp[MAXATOMLEN+4]; // 1B tag + 2B len + atom
+  int resp_idx = 0;
+
+  const size_t atom_len = strlen(atom);
+  const size_t left_len = sizeof(resp);
   if (atom_len > left_len) {
     fprintf(stderr, "%s: atom is too long\n", __FILE__);
   }
   ei_encode_atom_len(resp, &resp_idx, atom, MIN(atom_len, left_len));
 
-  // int s = 3;
-  // ei_print_term(stderr, resp, &s);
-  erlcmd_send(resp, resp_idx);
+  helium_reply_send(cmd, resp, resp_idx);
 }
 
 void helium_err_reply_send(const char *cmd, const char *msg) {
