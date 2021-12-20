@@ -1,14 +1,30 @@
 -module(helium_optee).
+
+-include_lib("public_key/include/public_key.hrl").
+
 -export([start/0, start/1, init/1, stop/0]).
--export([ecdh/1, gen_ecdsa_keypair/0, ecdsa_sign/1]).
+-export([start_link/0]).
+%% this are for directly calling
+-export([gen_ecdh_keypair/0, ecdh/1, gen_ecdsa_keypair/0, ecdsa_sign/1]).
+%% these are for library calling (passing Pid as first argument)
+-export([gen_ecdh_keypair/1, ecdh/2, gen_ecdsa_keypair/1, sign/2]).
+-export([stop/1]).
 
 -define(REPLY, 0).
+
+- spec start_link() -> {ok, pid()} | {error, term()}.
+start_link() ->
+    start().
 
 start() ->
     start(code:priv_dir(helium_optee) ++ "/helium_optee_port").
 
 start(ExtPrg) ->
     spawn(?MODULE, init, [ExtPrg]).
+
+-spec stop(pid()) -> {ok} | {error, term}.
+stop(Pid) ->
+    stop().
 
 stop() ->
     call_port({optee_stop, []}).
@@ -19,12 +35,34 @@ init(ExtPrg) ->
     Port = open_port({spawn, ExtPrg}, [{packet, 2}, nouse_stdio, binary]),
     loop(Port).
 
-ecdh(Y) ->
-    call_port({ecdh, Y}).
+ecdh(Pid, {#'ECPoint'{point=PubPoint}, _}) ->
+    << _:8, X:32/binary, Y:32/binary>> = PubPoint,
+    ecdh(X, Y).
 
+ecdh({X, Y}) ->
+    call_port({ecdh, {X, Y}}).
+
+-spec gen_ecdsa_keypair(pid()) -> {ok, pid()} | {error, term()}.
+gen_ecdsa_keypair(Pid) ->
+    gen_ecdsa_keypair().
+
+-spec gen_ecdsa_keypair() -> {ok, pid()} | {error, term()}.
 gen_ecdsa_keypair() ->
     call_port({gen_ecdsa_keypair}).
 
+-spec gen_ecdh_keypair(pid()) -> {ok, pid()} | {error, term()}.
+gen_ecdh_keypair(Pid) ->
+    gen_ecdh_keypair().
+
+-spec gen_ecdh_keypair() -> {ok, pid()} | {error, term()}.
+gen_ecdh_keypair() ->
+    call_port({gen_ecdh_keypair}).
+
+-spec sign(pid(), binary()) -> {ok, Signature::binary()} | {error, term()}.
+sign(Pid, X) ->
+    ecdsa_sign(X).
+
+-spec ecdsa_sign(binary()) -> {ok, Signature::binary()} | {error, term()}.
 ecdsa_sign(X) ->
     call_port({ecdsa_sign, X}).
 
