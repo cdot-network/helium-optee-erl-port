@@ -150,6 +150,7 @@ void helium_optee_start(const char *pbuf) {
 void helium_optee_stop(const char *pbuf) {
   helium_deinit();
   helium_reply_send_simple(HELIUM_CMD_OPTEE_STOP, "ok");
+  exit(0);
 }
 
 void helium_gen_ecdsa_keypair(const char *pbuf) {
