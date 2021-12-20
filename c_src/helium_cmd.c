@@ -5,6 +5,7 @@
 #include <poll.h>
 #include <err.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <ei.h>
 
@@ -171,7 +172,33 @@ void helium_gen_ecdsa_keypair(const char *pbuf) {
 }
 
 void helium_ecdsa_sign(const char *pbuf) {
-  helium_err_reply_send(HELIUM_CMD_ECDSA_SIGN, "not implemented");
+  // get X argument type, size
+  char digest[32];
+  char signature[64];
+  char resp[72]; // 64 + 8, BINARY_EXT: 1B tag + 4B len
+  int index = 0, type = 0, size = 0;
+  long digest_len = sizeof(digest);
+  size_t signature_len = sizeof(signature);
+  
+  ei_get_type(pbuf, &index, &type, &size);
+  if( ERL_BINARY_EXT != type || sizeof(digest) != size ) {
+    helium_err_reply_send(HELIUM_CMD_ECDSA_SIGN, "Binary is not a sha256 (32 bytes)");
+    return;
+  }
+  ei_decode_binary(pbuf, &index, digest, &digest_len);
+
+  if (ecdsa_sign(digest, digest_len, signature, &signature_len)) {
+    helium_err_reply_send(HELIUM_CMD_ECDSA_SIGN, "failed to execute ecdsa_sign");
+    return;
+  }
+
+  debug("signature_len: %lu", signature_len);
+  assert(sizeof(signature) == signature_len);
+  
+  int resp_idx = 0;
+  ei_encode_binary(resp, &resp_idx, signature, signature_len);
+  debug("encoded signature len: %d", resp_idx);
+  helium_reply_send(HELIUM_CMD_ECDSA_SIGN, resp, resp_idx);
 }
 
 void helium_gen_ecdh_keypair(const char *pbuf) {
@@ -207,6 +234,8 @@ void helium_ecdh(const char *pbuf) {
     helium_err_reply_send(HELIUM_CMD_ECDH, "incorrect X size");
     return;
   }
+  // this func always assume there is enough room
+  // https://www.erlang.org/doc/man/ei.html#ei_decode_binary
   ei_decode_binary(pbuf, &index, X, &len);
 
   // get Y argument type, size
@@ -279,14 +308,7 @@ void helium_reply_send_simple(const char *cmd, const char *atom) {
 
 void helium_err_reply_send(const char *cmd, const char *msg) {
   char resp[256];
-  int resp_idx = sizeof(uint16_t) + 1; // Payload length + 'Tag' byte
-  resp[2] = 0; // Reply
-
-  ei_encode_version(resp, &resp_idx);
-
-  // format: {err, {cmd, Msg}}
-  ei_encode_tuple_header(resp, &resp_idx, 2);
-  ei_encode_atom(resp, &resp_idx, "err");
+  int resp_idx = 0;
 
   ei_encode_tuple_header(resp, &resp_idx, 2);
   ei_encode_atom(resp, &resp_idx, cmd);
@@ -297,5 +319,5 @@ void helium_err_reply_send(const char *cmd, const char *msg) {
   }
   ei_encode_string_len(resp, &resp_idx, msg, MIN(msg_len, left_len));
 
-  erlcmd_send(resp, resp_idx);
+  helium_reply_send("err", resp, resp_idx);
 }

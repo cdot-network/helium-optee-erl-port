@@ -7,7 +7,7 @@
 %% this are for directly calling
 -export([gen_ecdh_keypair/0, ecdh/1, gen_ecdsa_keypair/0, ecdsa_sign/1]).
 %% these are for library calling (passing Pid as first argument)
--export([gen_ecdh_keypair/1, ecdh/2, gen_ecdsa_keypair/1, sign/2]).
+-export([gen_ecdh_keypair/1, ecdh/2, gen_ecdsa_keypair/1, ecdsa_sign/2]).
 -export([stop/1]).
 
 -define(REPLY, 0).
@@ -58,13 +58,13 @@ gen_ecdh_keypair(Pid) ->
 gen_ecdh_keypair() ->
     call_port({gen_ecdh_keypair}).
 
--spec sign(pid(), binary()) -> {ok, Signature::binary()} | {error, term()}.
-sign(Pid, X) ->
-    ecdsa_sign(X).
+-spec ecdsa_sign(pid(), binary()) -> {ok, Signature::binary()} | {error, term()}.
+ecdsa_sign(Pid, Digest) ->
+    ecdsa_sign(Digest).
 
 -spec ecdsa_sign(binary()) -> {ok, Signature::binary()} | {error, term()}.
-ecdsa_sign(X) ->
-    call_port({ecdsa_sign, X}).
+ecdsa_sign(Digest) ->
+    call_port({ecdsa_sign, Digest}).
 
 call_port(Msg) ->
     helium_optee_p ! {call, self(), Msg},

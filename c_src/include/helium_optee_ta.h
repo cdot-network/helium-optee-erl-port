@@ -26,7 +26,7 @@
  */
 #define TA_HELIUM_CMD_ENCRYPT		        3
 /*
- * in  params[0].memref input: message
+ * in  params[0].memref input: message digest
  * out params[1].memref output: signature
  */
 #define TA_HELIUM_CMD_ECDSA_SIGN            4
