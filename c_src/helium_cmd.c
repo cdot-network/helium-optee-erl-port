@@ -23,6 +23,7 @@
 #define HELIUM_CMD_OPTEE_STOP          "optee_stop"
 #define HELIUM_CMD_GEN_ECDSA_KEYPAIR   "gen_ecdsa_keypair"
 #define HELIUM_CMD_ECDSA_SIGN          "ecdsa_sign"
+#define HELIUM_CMD_GEN_ECDH_KEYPAIR   "gen_ecdh_keypair"
 #define HELIUM_CMD_ECDH                "ecdh"
 
 /*
@@ -44,11 +45,13 @@
 static void helium_cmd_handler(struct erlcmd_buffer *p_cmd_buffer);
 static void helium_gen_ecdsa_keypair(const char *pbuf);
 static void helium_ecdsa_sign(const char *pbuf);
+static void helium_gen_ecdh_keypair(const char *pbuf);
 static void helium_ecdh(const char *pbuf);
 static void helium_optee_start(const char *pbuf);
 static void helium_optee_stop(const char *pbuf);
 static void helium_err_reply_send(const char *cmd, const char *msg);
 static void helium_reply_send_simple(const char *cmd, const char *atom);
+static void helium_reply_send(const char *cmd, const char *term, const size_t term_len);
 
 void helium_handle_erlcmd(erlcmd_handler_fp handler) {
   struct erlcmd_buffer cmd_buffer;
@@ -115,6 +118,10 @@ void helium_cmd_handler(struct erlcmd_buffer *p_cmd_buffer) {
 
     helium_gen_ecdsa_keypair(p_cmd_buffer->pbuf + buf_idx);
 
+  } else if (strcmp(cmd, HELIUM_CMD_GEN_ECDH_KEYPAIR) == 0) {
+
+    helium_gen_ecdh_keypair(p_cmd_buffer->pbuf + buf_idx);
+
   } else if (strcmp(cmd, HELIUM_CMD_ECDSA_SIGN) == 0) {
 
     helium_ecdsa_sign(p_cmd_buffer->pbuf + buf_idx);
@@ -156,14 +163,7 @@ void helium_optee_stop(const char *pbuf) {
 void helium_gen_ecdsa_keypair(const char *pbuf) {
   int r = gen_ecdsa_keypair();
   if (0 == r) {
-    char resp[256];
-    int resp_idx = sizeof(uint16_t) + 1; // Payload length + 'Tag' byte
-    resp[2] = 0; // Reply
-    ei_encode_version(resp, &resp_idx);
-    /* ei_encode_atom(resp, &resp_idx, "reply"); */
-    ei_encode_long(resp, &resp_idx, 1);
-
-    erlcmd_send(resp, resp_idx);
+    helium_reply_send_simple(HELIUM_CMD_GEN_ECDSA_KEYPAIR, "ok");
   }
   else {
     helium_err_reply_send(HELIUM_CMD_GEN_ECDSA_KEYPAIR, "execution failed");
@@ -174,8 +174,58 @@ void helium_ecdsa_sign(const char *pbuf) {
   helium_err_reply_send(HELIUM_CMD_ECDSA_SIGN, "not implemented");
 }
 
+void helium_gen_ecdh_keypair(const char *pbuf) {
+  int r = gen_ecdh_keypair();
+  if (0 == r) {
+    helium_reply_send_simple(HELIUM_CMD_GEN_ECDH_KEYPAIR, "ok");
+  }
+  else {
+    helium_err_reply_send(HELIUM_CMD_GEN_ECDH_KEYPAIR, "execution failed");
+  }
+}
+
 void helium_ecdh(const char *pbuf) {
-  helium_err_reply_send(HELIUM_CMD_ECDH, "not implemented");
+  int index = 0, type = 0, size = 0;
+  long len = 0;
+  char X[32];
+  char Y[32];
+  char secret[256];
+  size_t secret_len = sizeof(secret);
+  char resp[264]; // 256 + 8, BINARY_EXT: 1B tag + 4B len
+
+  ei_get_type(pbuf, &index, &type, &size);
+  if( (ERL_SMALL_TUPLE_EXT != type && ERL_LARGE_TUPLE_EXT != type) || 2 != size ) {
+    helium_err_reply_send(HELIUM_CMD_ECDH, "incorrect {X, Y} tuple");
+    return;
+  }
+
+  ei_decode_tuple_header(pbuf, &index, &size);
+  
+  // get X argument type, size
+  ei_get_type(pbuf, &index, &type, &size);
+  if( ERL_BINARY_EXT != type || 32 != size ) {
+    helium_err_reply_send(HELIUM_CMD_ECDH, "incorrect X size");
+    return;
+  }
+  ei_decode_binary(pbuf, &index, X, &len);
+
+  // get Y argument type, size
+  ei_get_type(pbuf, &index, &type, &size);
+  if( ERL_BINARY_EXT != type || 32 != size ) {
+    helium_err_reply_send(HELIUM_CMD_ECDH, "incorrect Y size");
+    return;
+  }
+  ei_decode_binary(pbuf, &index, Y, &len);
+  
+  if(ecdh(X, sizeof(X), Y, sizeof(Y), secret, &secret_len)) {
+    helium_err_reply_send(HELIUM_CMD_ECDH, "failed to execute ecdh");
+    return;
+  }
+  debug("secret_len: %lu", secret_len);
+  int resp_idx = 0;
+  ei_encode_binary(resp, &resp_idx, secret, secret_len);
+  debug("encoded ecdh secret len: %d", resp_idx);
+  helium_reply_send(HELIUM_CMD_ECDH, resp, resp_idx);
 }
 
 void helium_reply_send(const char *cmd, const char *term, const size_t term_len) {

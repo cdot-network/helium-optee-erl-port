@@ -27,6 +27,10 @@ int helium_deinit();
 
 int gen_ecdsa_keypair();
 int ecdsa_sign(void* inbuf, size_t inbuf_len, void* outbuf, size_t* outbuf_len);
+
+int gen_ecdh_keypair();
+int ecdh(const void *X, const size_t x_len, const void* Y, const size_t y_len, void *secret, size_t *secret_len);
+
 __END_DECLS
 
 #endif /* HELIUM_H */

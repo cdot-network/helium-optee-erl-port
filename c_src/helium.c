@@ -16,7 +16,6 @@
 static int initialized = 0;
 static TEEC_Context ctx;
 static TEEC_Session sess;
-static TEEC_Operation op;
 static TEEC_UUID uuid = TA_HELIUM_UUID;
 
 static void teec_err(TEEC_Result res, uint32_t eo, const char *str)
@@ -105,6 +104,49 @@ int ecdsa_sign(void* inbuf, size_t inbuf_len, void* outbuf, size_t* outbuf_len) 
   res = TEEC_InvokeCommand(&sess, TA_HELIUM_CMD_ECDSA_SIGN, &op, &err_origin);
   if (res) {
     teec_err(res, err_origin, "TEEC_InvokeCommand(TA_HELIUM_CMD_ECDSA_SIGN)");
+    return 1;
+  }
+
+  return 0;
+}
+
+int gen_ecdh_keypair() {
+  uint32_t err_origin;
+  TEEC_Result res;
+  TEEC_Operation op;
+  const size_t key_size = 256;
+  
+  memset(&op, 0, sizeof(op));
+  op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+                                   TEEC_NONE, TEEC_NONE);
+  op.params[0].value.a = key_size;
+
+  res = TEEC_InvokeCommand(&sess, TA_HELIUM_CMD_GEN_ECDH_KEYPAIR, &op, &err_origin);
+  if (res)
+    teec_err(res, err_origin, "TEEC_InvokeCommand(TA_HELIUM_CMD_GEN_ECDH_KEYPAIR)");
+  return 0;
+}
+
+int ecdh(const void *X, const size_t x_len, const void* Y, const size_t y_len, void *secret, size_t *secret_len) {
+  uint32_t err_origin;
+  TEEC_Operation op;
+  TEEC_Result res;
+  
+  memset(&op, 0, sizeof(op));
+  op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+                                   TEEC_MEMREF_TEMP_INPUT,
+                                   TEEC_MEMREF_TEMP_OUTPUT,
+                                   TEEC_NONE);
+  op.params[0].tmpref.buffer = (void *)X;
+  op.params[0].tmpref.size = x_len;
+  op.params[1].tmpref.buffer = (void *)Y;
+  op.params[1].tmpref.size = y_len;
+  op.params[2].tmpref.buffer = secret;
+  op.params[2].tmpref.size = *secret_len;
+
+  res = TEEC_InvokeCommand(&sess, TA_HELIUM_CMD_ECDH, &op, &err_origin);
+  if (res) {
+    teec_err(res, err_origin, "TEEC_InvokeCommand(TA_HELIUM_CMD_ECDH)");
     return 1;
   }
 

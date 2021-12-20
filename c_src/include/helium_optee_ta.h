@@ -6,6 +6,7 @@
 #ifndef TA_HELIUM_H
 #define TA_HELIUM_H
 
+
 /*
  * This UUID is generated with uuidgen
  * the ITU-T UUID generator at http://www.itu.int/ITU-T/asn1/uuid.html
@@ -23,11 +24,18 @@
  * in	params[1].memref  input
  * out	params[2].memref  output
  */
-#define TA_HELIUM_CMD_ENCRYPT		3
+#define TA_HELIUM_CMD_ENCRYPT		        3
 /*
  * in  params[0].memref input: message
  * out params[1].memref output: signature
  */
-#define TA_HELIUM_CMD_ECDSA_SIGN      4
+#define TA_HELIUM_CMD_ECDSA_SIGN            4
+
+#define TA_HELIUM_CMD_ECDH                  5
+
+/*
+ * in	params[0].value.a key size
+ */
+#define TA_HELIUM_CMD_GEN_ECDH_KEYPAIR		6
 
 #endif /*TA_HELIUM_H*/
