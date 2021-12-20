@@ -11,7 +11,7 @@ start(ExtPrg) ->
     spawn(?MODULE, init, [ExtPrg]).
 
 stop() ->
-    helium_optee_p ! stop.
+    call_port({optee_stop, []}).
 
 init(ExtPrg) ->
     register(helium_optee_p, self()),
