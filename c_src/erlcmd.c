@@ -100,5 +100,5 @@ void erlcmd_send(char *resp, size_t len) {
     written += i;
   }while(written < len);
 
-  debug("erlcmd_send finished");
+  debug("erlcmd_send finished\n");
 }
