@@ -22,7 +22,7 @@ start() ->
 start(ExtPrg) ->
     spawn(?MODULE, init, [ExtPrg]).
 
--spec stop(pid()) -> {ok} | {error, term}.
+-spec stop(pid()) -> ok | {error, term}.
 stop(Pid) ->
     stop().
 
@@ -42,19 +42,19 @@ ecdh(Pid, {#'ECPoint'{point=PubPoint}, _}) ->
 ecdh({X, Y}) ->
     call_port({ecdh, {X, Y}}).
 
--spec gen_ecdsa_keypair(pid()) -> {ok, pid()} | {error, term()}.
+-spec gen_ecdsa_keypair(pid()) -> ok | {error, term()}.
 gen_ecdsa_keypair(Pid) ->
     gen_ecdsa_keypair().
 
--spec gen_ecdsa_keypair() -> {ok, pid()} | {error, term()}.
+-spec gen_ecdsa_keypair() -> ok | {error, term()}.
 gen_ecdsa_keypair() ->
     call_port({gen_ecdsa_keypair}).
 
--spec gen_ecdh_keypair(pid()) -> {ok, pid()} | {error, term()}.
+-spec gen_ecdh_keypair(pid()) -> {ok} | {error, term()}.
 gen_ecdh_keypair(Pid) ->
     gen_ecdh_keypair().
 
--spec gen_ecdh_keypair() -> {ok, pid()} | {error, term()}.
+-spec gen_ecdh_keypair() -> ok | {error, term()}.
 gen_ecdh_keypair() ->
     call_port({gen_ecdh_keypair}).
 
@@ -70,7 +70,7 @@ call_port(Msg) ->
     helium_optee_p ! {call, self(), Msg},
     receive
         {helium_optee, Result} ->
-            io:format("call_port: ~w~n", [Result]),
+            io:format("call_port Result: ~w~n", [Result]),
             Result
     end.
 

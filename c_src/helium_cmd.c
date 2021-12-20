@@ -24,8 +24,10 @@
 #define HELIUM_CMD_OPTEE_STOP          "optee_stop"
 #define HELIUM_CMD_GEN_ECDSA_KEYPAIR   "gen_ecdsa_keypair"
 #define HELIUM_CMD_ECDSA_SIGN          "ecdsa_sign"
-#define HELIUM_CMD_GEN_ECDH_KEYPAIR   "gen_ecdh_keypair"
+#define HELIUM_CMD_GEN_ECDH_KEYPAIR    "gen_ecdh_keypair"
 #define HELIUM_CMD_ECDH                "ecdh"
+#define HELIUM_CMD_OK                  "ok"
+#define HELIUM_CMD_ERROR               "error"
 
 /*
  * https://stackoverflow.com/questions/3437404/min-and-max-in-c
@@ -152,19 +154,19 @@ void helium_optee_start(const char *pbuf) {
     err(EXIT_FAILURE, "failed to init helium");
   }
 
-  helium_reply_send_simple(HELIUM_CMD_OPTEE_START, "ok");
+  helium_reply_send_simple(HELIUM_CMD_OK, NULL);
 }
 
 void helium_optee_stop(const char *pbuf) {
   helium_deinit();
-  helium_reply_send_simple(HELIUM_CMD_OPTEE_STOP, "ok");
+  helium_reply_send_simple(HELIUM_CMD_OK, NULL);
   exit(0);
 }
 
 void helium_gen_ecdsa_keypair(const char *pbuf) {
   int r = gen_ecdsa_keypair();
   if (0 == r) {
-    helium_reply_send_simple(HELIUM_CMD_GEN_ECDSA_KEYPAIR, "ok");
+    helium_reply_send_simple(HELIUM_CMD_OK, NULL);
   }
   else {
     helium_err_reply_send(HELIUM_CMD_GEN_ECDSA_KEYPAIR, "execution failed");
@@ -198,13 +200,13 @@ void helium_ecdsa_sign(const char *pbuf) {
   int resp_idx = 0;
   ei_encode_binary(resp, &resp_idx, signature, signature_len);
   debug("encoded signature len: %d", resp_idx);
-  helium_reply_send(HELIUM_CMD_ECDSA_SIGN, resp, resp_idx);
+  helium_reply_send(HELIUM_CMD_OK, resp, resp_idx);
 }
 
 void helium_gen_ecdh_keypair(const char *pbuf) {
   int r = gen_ecdh_keypair();
   if (0 == r) {
-    helium_reply_send_simple(HELIUM_CMD_GEN_ECDH_KEYPAIR, "ok");
+    helium_reply_send_simple(HELIUM_CMD_OK, NULL);
   }
   else {
     helium_err_reply_send(HELIUM_CMD_GEN_ECDH_KEYPAIR, "execution failed");
@@ -254,7 +256,7 @@ void helium_ecdh(const char *pbuf) {
   int resp_idx = 0;
   ei_encode_binary(resp, &resp_idx, secret, secret_len);
   debug("encoded ecdh secret len: %d", resp_idx);
-  helium_reply_send(HELIUM_CMD_ECDH, resp, resp_idx);
+  helium_reply_send(HELIUM_CMD_OK, resp, resp_idx);
 }
 
 void helium_reply_send(const char *cmd, const char *term, const size_t term_len) {
@@ -264,8 +266,10 @@ void helium_reply_send(const char *cmd, const char *term, const size_t term_len)
 
   ei_encode_version(resp, &resp_idx);
 
-  // format: {cmd, {Term}}
-  ei_encode_tuple_header(resp, &resp_idx, 2);
+  // format: {cmd, Term} or ok
+  if (0 != term_len ) {
+    ei_encode_tuple_header(resp, &resp_idx, 2);
+  }
   const size_t cmd_len = strlen(cmd);
   const size_t left_len = sizeof(resp) - resp_idx - 1 /* tag */ ;
   if (cmd_len > left_len) {
@@ -275,18 +279,19 @@ void helium_reply_send(const char *cmd, const char *term, const size_t term_len)
   }
   ei_encode_atom(resp, &resp_idx, cmd);
 
-  const size_t max_term_len = sizeof(resp) - resp_idx;
-  if (term_len > max_term_len) {
-    fprintf(stderr, "%s: reply(cmd: %s) term is too long:\n", __FILE__, cmd);
-    int i = 0;
-    ei_print_term(stderr, term, &i);
-    fprintf(stderr, "\n");
-    helium_err_reply_send(cmd, "term is too long");
-    return;
+  if (0 != term_len ) {
+    const size_t max_term_len = sizeof(resp) - resp_idx;
+    if (term_len > max_term_len) {
+      fprintf(stderr, "%s: reply(cmd: %s) term is too long:\n", __FILE__, cmd);
+      int i = 0;
+      ei_print_term(stderr, term, &i);
+      fprintf(stderr, "\n");
+      helium_err_reply_send(cmd, "term is too long");
+      return;
+    }
+    memcpy(resp + resp_idx, term, term_len);
+    resp_idx += term_len;
   }
-  memcpy(resp + resp_idx, term, term_len);
-  resp_idx += term_len;
-
   // int s = 3;
   // ei_print_term(stderr, resp, &s);
   erlcmd_send(resp, resp_idx);
@@ -296,13 +301,14 @@ void helium_reply_send_simple(const char *cmd, const char *atom) {
   char resp[MAXATOMLEN+4]; // 1B tag + 2B len + atom
   int resp_idx = 0;
 
-  const size_t atom_len = strlen(atom);
-  const size_t left_len = sizeof(resp);
-  if (atom_len > left_len) {
-    fprintf(stderr, "%s: atom is too long\n", __FILE__);
+  if (atom) {
+    const size_t atom_len = strlen(atom);
+    const size_t left_len = sizeof(resp);
+    if (atom_len > left_len) {
+      fprintf(stderr, "%s: atom is too long\n", __FILE__);
+    }
+    ei_encode_atom_len(resp, &resp_idx, atom, MIN(atom_len, left_len));
   }
-  ei_encode_atom_len(resp, &resp_idx, atom, MIN(atom_len, left_len));
-
   helium_reply_send(cmd, resp, resp_idx);
 }
 
@@ -319,5 +325,5 @@ void helium_err_reply_send(const char *cmd, const char *msg) {
   }
   ei_encode_string_len(resp, &resp_idx, msg, MIN(msg_len, left_len));
 
-  helium_reply_send("err", resp, resp_idx);
+  helium_reply_send("error", resp, resp_idx);
 }
