@@ -1,0 +1,14 @@
+{application, helium_optee,
+ [{description, "An Helium Optee OTP application"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {licenses, ["IotpiCommercial"]},
+  {links, []}
+ ]}.

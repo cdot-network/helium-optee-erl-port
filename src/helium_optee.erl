@@ -1,11 +1,11 @@
--module(helium_optee_port).
+-module(helium_optee).
 -export([start/0, start/1, init/1, stop/0]).
 -export([ecdh/1, gen_ecdsa_keypair/0, ecdsa_sign/1]).
 
 -define(REPLY, 0).
 
 start() ->
-    start(code:priv_dir(helium_optee_port) ++ "/helium-optee-erl-port").
+    start(code:priv_dir(helium_optee) ++ "/helium_optee_port").
 
 start(ExtPrg) ->
     spawn(?MODULE, init, [ExtPrg]).

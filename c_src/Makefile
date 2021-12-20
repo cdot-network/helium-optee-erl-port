@@ -6,8 +6,9 @@ TEEC_EXPORT ?= /usr/include/optee/export-user_ta
 CURDIR := $(shell pwd)
 BASEDIR := $(abspath $(CURDIR)/..)
 
-PROJECT ?= $(notdir $(BASEDIR))
-PROJECT := $(strip $(PROJECT))
+# PROJECT ?= $(notdir $(BASEDIR))
+# PROJECT := $(strip $(PROJECT))
+PROJECT ?= "helium_optee_port"
 
 ERTS_INCLUDE_DIR ?= $(shell erl -noshell -eval "io:format(\"~ts/erts-~ts/include/\", [code:root_dir(), erlang:system_info(version)])." -s init stop)
 ERL_INTERFACE_INCLUDE_DIR ?= $(shell erl -noshell -eval "io:format(\"~ts\", [code:lib_dir(erl_interface, include)])." -s init stop)
