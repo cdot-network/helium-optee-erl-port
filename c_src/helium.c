@@ -20,7 +20,8 @@ static TEEC_UUID uuid = TA_HELIUM_UUID;
 
 static void teec_err(TEEC_Result res, uint32_t eo, const char *str)
 {
-	errx(1, "%s: %#" PRIx32 " (error origin %#" PRIx32 ")", str, res, eo);
+  // errx(1, "%s: %#" PRIx32 " (error origin %#" PRIx32 ")", str, res, eo);
+  fprintf(stderr, "%s: %#" PRIx32 " (error origin %#" PRIx32 ")", str, res, eo);
 }
 int helium_init() {
   uint32_t err_origin;
@@ -83,8 +84,10 @@ int gen_ecdsa_keypair() {
   op.params[0].value.a = key_size;
 
   res = TEEC_InvokeCommand(&sess, TA_HELIUM_CMD_GEN_ECDSA_KEYPAIR, &op, &err_origin);
-  if (res)
+  if (res) {
     teec_err(res, err_origin, "TEEC_InvokeCommand(TA_HELIUM_CMD_GEN_ECDSA_KEYPAIR)");
+    return 1;
+  }
   return 0;
 }
 
@@ -122,8 +125,10 @@ int gen_ecdh_keypair() {
   op.params[0].value.a = key_size;
 
   res = TEEC_InvokeCommand(&sess, TA_HELIUM_CMD_GEN_ECDH_KEYPAIR, &op, &err_origin);
-  if (res)
+  if (res) {
     teec_err(res, err_origin, "TEEC_InvokeCommand(TA_HELIUM_CMD_GEN_ECDH_KEYPAIR)");
+    return 1;
+  }
   return 0;
 }
 

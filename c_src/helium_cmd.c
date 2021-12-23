@@ -190,6 +190,7 @@ void helium_ecdsa_sign(const char *pbuf) {
   ei_decode_binary(pbuf, &index, digest, &digest_len);
 
   if (ecdsa_sign(digest, digest_len, signature, &signature_len)) {
+    debug("ecdsa sign failed");
     helium_err_reply_send(HELIUM_CMD_ECDSA_SIGN, "failed to execute ecdsa_sign");
     return;
   }
@@ -325,5 +326,5 @@ void helium_err_reply_send(const char *cmd, const char *msg) {
   }
   ei_encode_string_len(resp, &resp_idx, msg, MIN(msg_len, left_len));
 
-  helium_reply_send("error", resp, resp_idx);
+  helium_reply_send(HELIUM_CMD_ERROR, resp, resp_idx);
 }

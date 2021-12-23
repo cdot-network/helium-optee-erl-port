@@ -64,7 +64,12 @@ ecdsa_sign(Pid, Digest) ->
 
 -spec ecdsa_sign(binary()) -> {ok, Signature::binary()} | {error, term()}.
 ecdsa_sign(Digest) ->
-    call_port({ecdsa_sign, Digest}).
+    case call_port({ecdsa_sign, Digest}) of
+        {ok, <<R:256/unsigned-integer-big, S:256/unsigned-integer-big>>} ->
+            {ok, public_key:der_encode('ECDSA-Sig-Value', #'ECDSA-Sig-Value'{r=R, s=S})};
+        {error, E} ->
+            io:format("Error: ~p~n", [E])
+    end.
 
 call_port(Msg) ->
     helium_optee_p ! {call, self(), Msg},
