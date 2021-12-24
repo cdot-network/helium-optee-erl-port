@@ -5,9 +5,9 @@
 -export([start/0, start/1, init/1, stop/0]).
 -export([start_link/0]).
 %% this are for directly calling
--export([gen_ecdh_keypair/0, ecdh/1, gen_ecdsa_keypair/0, ecdsa_sign/1]).
+-export([gen_ecdh_keypair/0, ecdh/1, gen_ecdsa_keypair/0, ecdsa_sign/1, get_ecc_publickey/0]).
 %% these are for library calling (passing Pid as first argument)
--export([gen_ecdh_keypair/1, ecdh/2, gen_ecdsa_keypair/1, ecdsa_sign/2]).
+-export([gen_ecdh_keypair/1, ecdh/2, gen_ecdsa_keypair/1, ecdsa_sign/2, get_ecc_publickey/1]).
 -export([stop/1]).
 
 -define(REPLY, 0).
@@ -75,11 +75,20 @@ ecdsa_sign(Digest) ->
 
 -spec get_ecc_publickey(pid()) -> {ok, libp2p_crypto:pubkey()} | {error, term()}.
 get_ecc_publickey(Pid) ->
-    <<X:32/binary, Y:32/binary>> = get_ecc_publickey().
+    get_ecc_publickey().
 
--spec get_ecc_publickey() -> {ok, {binary(), binary()}} | {error, term()}.
+
+-spec get_ecc_publickey() -> {ok, libp2p_crypto:pubkey()} | {error, term()}.
 get_ecc_publickey() -> 
-    call_port({get_ecc_publickey}).
+    case call_port({get_ecc_publickey}) of
+        {ok, {X, Y}} ->
+            PubPoint = <<4:8, X:32/binary, Y:32/binary>>,
+            {ok, {#'ECPoint'{point=PubPoint}, {namedCurve, ?secp256r1}}};
+
+        {error, E} ->
+            io:format("get_ecc_publickey: ~p~n", [E]),
+            {error, E}
+    end.
 
 call_port(Msg) ->
     helium_optee_p ! {call, self(), Msg},
