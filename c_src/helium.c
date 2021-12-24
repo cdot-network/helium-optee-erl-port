@@ -110,6 +110,7 @@ int ecdsa_sign(void* inbuf, size_t inbuf_len, void* outbuf, size_t* outbuf_len) 
     return 1;
   }
 
+  *outbuf_len = op.params[1].tmpref.size;
   return 0;
 }
 
@@ -155,6 +156,7 @@ int ecdh(const void *X, const size_t x_len, const void* Y, const size_t y_len, v
     return 1;
   }
 
+  *secret_len = op.params[2].tmpref.size;
   return 0;
 }
 
