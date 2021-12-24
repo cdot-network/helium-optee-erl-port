@@ -163,7 +163,7 @@ int ecdh(const void *X, const size_t x_len, const void* Y, const size_t y_len, v
   return 0;
 }
 
-int get_publickey(const void *X, size_t *x_len, const void* Y, size_t *y_len) {
+int get_ecc_publickey(const void *X, size_t *x_len, const void* Y, size_t *y_len) {
 
   uint32_t err_origin;
   TEEC_Operation op;
