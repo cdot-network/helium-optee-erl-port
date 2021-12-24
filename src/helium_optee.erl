@@ -23,7 +23,7 @@ start(ExtPrg) ->
     spawn(?MODULE, init, [ExtPrg]).
 
 -spec stop(pid()) -> ok | {error, term}.
-stop(Pid) ->
+stop(_Pid) ->
     stop().
 
 stop() ->
@@ -36,7 +36,7 @@ init(ExtPrg) ->
     loop(Port).
 
 -spec ecdh(pid(), libp2p_crypto:pubkey()) -> {ok, binary()} | {error, term()}.
-ecdh(Pid, {#'ECPoint'{point=PubPoint}, _}) ->
+ecdh(_Pid, {#'ECPoint'{point=PubPoint}, _}) ->
     << _:8, X:32/binary, Y:32/binary>> = PubPoint,
     ecdh(X, Y).
 
@@ -45,7 +45,7 @@ ecdh({X, Y}) ->
     call_port({ecdh, {X, Y}}).
 
 -spec gen_ecdsa_keypair(pid()) -> ok | {error, term()}.
-gen_ecdsa_keypair(Pid) ->
+gen_ecdsa_keypair(_Pid) ->
     gen_ecdsa_keypair().
 
 -spec gen_ecdsa_keypair() -> ok | {error, term()}.
@@ -53,7 +53,7 @@ gen_ecdsa_keypair() ->
     call_port({gen_ecdsa_keypair}).
 
 -spec gen_ecdh_keypair(pid()) -> {ok} | {error, term()}.
-gen_ecdh_keypair(Pid) ->
+gen_ecdh_keypair(_Pid) ->
     gen_ecdh_keypair().
 
 -spec gen_ecdh_keypair() -> ok | {error, term()}.
@@ -61,7 +61,7 @@ gen_ecdh_keypair() ->
     call_port({gen_ecdh_keypair}).
 
 -spec ecdsa_sign(pid(), binary()) -> {ok, Signature::binary()} | {error, term()}.
-ecdsa_sign(Pid, Digest) ->
+ecdsa_sign(_Pid, Digest) ->
     ecdsa_sign(Digest).
 
 -spec ecdsa_sign(binary()) -> {ok, Signature::binary()} | {error, term()}.
@@ -75,7 +75,7 @@ ecdsa_sign(Digest) ->
     end.
 
 -spec get_ecc_publickey(pid()) -> {ok, libp2p_crypto:pubkey()} | {error, term()}.
-get_ecc_publickey(Pid) ->
+get_ecc_publickey(_Pid) ->
     get_ecc_publickey().
 
 
@@ -115,7 +115,7 @@ loop(Port) ->
                 {Port, closed} ->
                     exit(normal)
             end;
-        {'EXIT', Port, Reason} ->
+        {'EXIT', Port, _Reason} ->
             exit(port_terminated)
     end.
 
