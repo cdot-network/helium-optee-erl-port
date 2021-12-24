@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <err.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -110,6 +111,7 @@ int ecdsa_sign(void* inbuf, size_t inbuf_len, void* outbuf, size_t* outbuf_len) 
     return 1;
   }
 
+  assert(op.params[1].tmpref.size <= *outbuf_len);
   *outbuf_len = op.params[1].tmpref.size;
   return 0;
 }
@@ -156,6 +158,7 @@ int ecdh(const void *X, const size_t x_len, const void* Y, const size_t y_len, v
     return 1;
   }
 
+  assert(op.params[2].tmpref.size <= *secret_len);
   *secret_len = op.params[2].tmpref.size;
   return 0;
 }
@@ -186,6 +189,9 @@ int get_publickey(const void *X, size_t *x_len, const void* Y, size_t *y_len) {
     return 1;
   }
 
+  assert(op.params[0].tmpref.size <= *x_len);
+  assert(op.params[1].tmpref.size <= *y_len);
+  
   *x_len = op.params[0].tmpref.size;
   *y_len = op.params[1].tmpref.size;
   return 0;
