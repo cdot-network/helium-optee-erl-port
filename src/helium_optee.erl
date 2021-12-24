@@ -70,7 +70,8 @@ ecdsa_sign(Digest) ->
         {ok, <<R:256/unsigned-integer-big, S:256/unsigned-integer-big>>} ->
             {ok, public_key:der_encode('ECDSA-Sig-Value', #'ECDSA-Sig-Value'{r=R, s=S})};
         {error, E} ->
-            io:format("Error: ~p~n", [E])
+            io:format("Error: ~p~n", [E]),
+            {error, E}
     end.
 
 -spec get_ecc_publickey(pid()) -> {ok, libp2p_crypto:pubkey()} | {error, term()}.
