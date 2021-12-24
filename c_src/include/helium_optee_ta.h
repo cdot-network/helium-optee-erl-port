@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Qingdao IotPi Information Technology Ltd.
+ * Copyright (c) 2021, Qingdao IotPi Information Technology Ltd.
  * All rights reserved.
  *
  */
@@ -30,6 +30,11 @@
  * out params[1].memref output: signature
  */
 #define TA_HELIUM_CMD_ECDSA_SIGN            4
+/*
+ * in  params[0].memref input: ECC PUBLIC KEY X
+ * in  params[0].memref input: ECC PUBLIC KEY Y
+ * out params[1].memref output: signature
+ */
 
 #define TA_HELIUM_CMD_ECDH                  5
 
@@ -37,5 +42,11 @@
  * in	params[0].value.a key size
  */
 #define TA_HELIUM_CMD_GEN_ECDH_KEYPAIR		6
+
+/*
+ * in  params[0].memref output: ECC PUBLIC KEY X
+ * in  params[0].memref output: ECC PUBLIC KEY Y
+ */
+#define TA_HELIUM_CMD_GET_ECC_PUBLICKEY		7
 
 #endif /*TA_HELIUM_H*/

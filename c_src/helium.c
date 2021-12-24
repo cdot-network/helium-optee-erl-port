@@ -157,3 +157,34 @@ int ecdh(const void *X, const size_t x_len, const void* Y, const size_t y_len, v
 
   return 0;
 }
+
+int get_publickey(const void *X, size_t *x_len, const void* Y, size_t *y_len) {
+
+  uint32_t err_origin;
+  TEEC_Operation op;
+  TEEC_Result res;
+
+  if ( *x_len < 32 || *y_len < 32 ) {
+    teec_err(res, err_origin, "get_publickey: x and y buffer requires 32 bytes");
+    return 1;
+  }
+  memset(&op, 0, sizeof(op));
+  op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT,
+                                   TEEC_MEMREF_TEMP_OUTPUT,
+                                   TEEC_NONE,
+                                   TEEC_NONE);
+  op.params[0].tmpref.buffer = (void *)X;
+  op.params[0].tmpref.size = *x_len;
+  op.params[1].tmpref.buffer = (void *)Y;
+  op.params[1].tmpref.size = *y_len;
+
+  res = TEEC_InvokeCommand(&sess, TA_HELIUM_CMD_GET_ECC_PUBLICKEY, &op, &err_origin);
+  if (res) {
+    teec_err(res, err_origin, "TEEC_InvokeCommand(TA_HELIUM_CMD_GET_ECC_PUBLICKEY)");
+    return 1;
+  }
+
+  *x_len = op.params[0].tmpref.size;
+  *y_len = op.params[1].tmpref.size;
+  return 0;
+}
