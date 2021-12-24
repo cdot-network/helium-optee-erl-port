@@ -165,7 +165,7 @@ int get_publickey(const void *X, size_t *x_len, const void* Y, size_t *y_len) {
   TEEC_Result res;
 
   if ( *x_len < 32 || *y_len < 32 ) {
-    teec_err(res, err_origin, "get_publickey: x and y buffer requires 32 bytes");
+    err(EXIT_FAILURE, "get_publickey: x and y buffer requires 32 bytes");
     return 1;
   }
   memset(&op, 0, sizeof(op));
