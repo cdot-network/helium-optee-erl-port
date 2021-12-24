@@ -91,6 +91,13 @@ get_ecc_publickey() ->
             {error, E}
     end.
 
+-spec get_public_key(public_key | onboarding_key) -> {ok, libp2p_crypto:pubkey()} | {error, term()}.
+get_public_key(public_key) ->
+    get_ecc_publickey();
+get_public_key(onboarding_key) ->
+    {error, not_implemented}.
+
+
 call_port(Msg) ->
     helium_optee_p ! {call, self(), Msg},
     receive
