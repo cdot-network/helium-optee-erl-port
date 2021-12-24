@@ -267,46 +267,25 @@ void helium_ecdh(const char *pbuf) {
 }
 
 void helium_get_ecc_publickey(const char *pbuf) {
-  int index = 0, type = 0, size = 0;
-  long len = 0;
   char X[32];
+  size_t x_len = sizeof(X);
+
   char Y[32];
+  size_t y_len = sizeof(Y);
+  
   char resp[264]; // 256 + 8, BINARY_EXT: 1B tag + 4B len
-
-  ei_get_type(pbuf, &index, &type, &size);
-  if( (ERL_SMALL_TUPLE_EXT != type && ERL_LARGE_TUPLE_EXT != type) || 2 != size ) {
-    helium_err_reply_send(HELIUM_CMD_ECDH, "incorrect {X, Y} tuple");
-    return;
-  }
-
-  ei_decode_tuple_header(pbuf, &index, &size);
-  
-  // get X argument type, size
-  ei_get_type(pbuf, &index, &type, &size);
-  if( ERL_BINARY_EXT != type || 32 != size ) {
-    helium_err_reply_send(HELIUM_CMD_ECDH, "incorrect X size");
-    return;
-  }
-  // this func always assume there is enough room
-  // https://www.erlang.org/doc/man/ei.html#ei_decode_binary
-  ei_decode_binary(pbuf, &index, X, &len);
-
-  // get Y argument type, size
-  ei_get_type(pbuf, &index, &type, &size);
-  if( ERL_BINARY_EXT != type || 32 != size ) {
-    helium_err_reply_send(HELIUM_CMD_ECDH, "incorrect Y size");
-    return;
-  }
-  ei_decode_binary(pbuf, &index, Y, &len);
-  
-  if(ecdh(X, sizeof(X), Y, sizeof(Y), secret, &secret_len)) {
-    helium_err_reply_send(HELIUM_CMD_ECDH, "failed to execute ecdh");
-    return;
-  }
-  debug("secret_len: %lu", secret_len);
   int resp_idx = 0;
-  ei_encode_binary(resp, &resp_idx, secret, secret_len);
-  debug("encoded ecdh secret len: %d", resp_idx);
+
+  if(get_ecc_publickey(X, &x_len, Y, &y_len)) {
+    helium_err_reply_send(HELIUM_CMD_GET_ECC_PUBLICKEY, "failed to execute get_ecc_publickey");
+    return;
+  }
+  debug("x_len: %lu, y_len: %lu", x_len, y_len);
+  // return format: {ok, {X, Y}}
+  ei_encode_tuple_header(resp, &resp_idx, 2);
+  ei_encode_binary(resp, &resp_idx, X, x_len);
+  ei_encode_binary(resp, &resp_idx, Y, y_len);
+  debug("encoded ecc public key {X, Y} len: %d", resp_idx);
   helium_reply_send(HELIUM_CMD_OK, resp, resp_idx);
 }
 
