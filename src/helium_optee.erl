@@ -35,10 +35,12 @@ init(ExtPrg) ->
     Port = open_port({spawn, ExtPrg}, [{packet, 2}, nouse_stdio, binary]),
     loop(Port).
 
+-spec ecdh(pid(), libp2p_crypto:pubkey()) -> {ok, binary()} | {error, term()}.
 ecdh(Pid, {#'ECPoint'{point=PubPoint}, _}) ->
     << _:8, X:32/binary, Y:32/binary>> = PubPoint,
     ecdh(X, Y).
 
+-spec ecdh({binary(), binary()}) -> {ok, binary()} | {error, term()}.
 ecdh({X, Y}) ->
     call_port({ecdh, {X, Y}}).
 
