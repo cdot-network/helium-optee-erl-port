@@ -26,6 +26,7 @@
 #define HELIUM_CMD_ECDSA_SIGN          "ecdsa_sign"
 #define HELIUM_CMD_GEN_ECDH_KEYPAIR    "gen_ecdh_keypair"
 #define HELIUM_CMD_ECDH                "ecdh"
+#define HELIUM_CMD_GET_ECC_PUBLICKEY   "get_ecc_publickey"
 #define HELIUM_CMD_OK                  "ok"
 #define HELIUM_CMD_ERROR               "error"
 
@@ -50,6 +51,7 @@ static void helium_gen_ecdsa_keypair(const char *pbuf);
 static void helium_ecdsa_sign(const char *pbuf);
 static void helium_gen_ecdh_keypair(const char *pbuf);
 static void helium_ecdh(const char *pbuf);
+static void helium_get_ecc_publickey(const char *pbuf);
 static void helium_optee_start(const char *pbuf);
 static void helium_optee_stop(const char *pbuf);
 static void helium_err_reply_send(const char *cmd, const char *msg);
@@ -132,6 +134,10 @@ void helium_cmd_handler(struct erlcmd_buffer *p_cmd_buffer) {
   } else if (strcmp(cmd, HELIUM_CMD_ECDH) == 0) {
 
     helium_ecdh(p_cmd_buffer->pbuf + buf_idx);
+
+  } else if (strcmp(cmd, HELIUM_CMD_GET_PUBLICKEY) == 0) {
+
+    helium_get_ecc_publickey(p_cmd_buffer->pbuf + buf_idx);
 
   } else if (strcmp(cmd, HELIUM_CMD_OPTEE_START) == 0) {
 
@@ -221,6 +227,50 @@ void helium_ecdh(const char *pbuf) {
   char Y[32];
   char secret[256];
   size_t secret_len = sizeof(secret);
+  char resp[264]; // 256 + 8, BINARY_EXT: 1B tag + 4B len
+
+  ei_get_type(pbuf, &index, &type, &size);
+  if( (ERL_SMALL_TUPLE_EXT != type && ERL_LARGE_TUPLE_EXT != type) || 2 != size ) {
+    helium_err_reply_send(HELIUM_CMD_ECDH, "incorrect {X, Y} tuple");
+    return;
+  }
+
+  ei_decode_tuple_header(pbuf, &index, &size);
+  
+  // get X argument type, size
+  ei_get_type(pbuf, &index, &type, &size);
+  if( ERL_BINARY_EXT != type || 32 != size ) {
+    helium_err_reply_send(HELIUM_CMD_ECDH, "incorrect X size");
+    return;
+  }
+  // this func always assume there is enough room
+  // https://www.erlang.org/doc/man/ei.html#ei_decode_binary
+  ei_decode_binary(pbuf, &index, X, &len);
+
+  // get Y argument type, size
+  ei_get_type(pbuf, &index, &type, &size);
+  if( ERL_BINARY_EXT != type || 32 != size ) {
+    helium_err_reply_send(HELIUM_CMD_ECDH, "incorrect Y size");
+    return;
+  }
+  ei_decode_binary(pbuf, &index, Y, &len);
+  
+  if(ecdh(X, sizeof(X), Y, sizeof(Y), secret, &secret_len)) {
+    helium_err_reply_send(HELIUM_CMD_ECDH, "failed to execute ecdh");
+    return;
+  }
+  debug("secret_len: %lu", secret_len);
+  int resp_idx = 0;
+  ei_encode_binary(resp, &resp_idx, secret, secret_len);
+  debug("encoded ecdh secret len: %d", resp_idx);
+  helium_reply_send(HELIUM_CMD_OK, resp, resp_idx);
+}
+
+void helium_get_ecc_publickey(const char *pbuf) {
+  int index = 0, type = 0, size = 0;
+  long len = 0;
+  char X[32];
+  char Y[32];
   char resp[264]; // 256 + 8, BINARY_EXT: 1B tag + 4B len
 
   ei_get_type(pbuf, &index, &type, &size);

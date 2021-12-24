@@ -71,6 +71,14 @@ ecdsa_sign(Digest) ->
             io:format("Error: ~p~n", [E])
     end.
 
+-spec get_ecc_publickey(pid()) -> {ok, libp2p_crypto:pubkey()} | {error, term()}.
+get_ecc_publickey(Pid) ->
+    <<X:32/binary, Y:32/binary>> = get_ecc_publickey().
+
+-spec get_ecc_publickey() -> {ok, {binary(), binary()}} | {error, term()}.
+get_ecc_publickey() -> 
+    call_port({get_ecc_publickey}).
+
 call_port(Msg) ->
     helium_optee_p ! {call, self(), Msg},
     receive
