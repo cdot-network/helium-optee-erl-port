@@ -135,7 +135,7 @@ void helium_cmd_handler(struct erlcmd_buffer *p_cmd_buffer) {
 
     helium_ecdh(p_cmd_buffer->pbuf + buf_idx);
 
-  } else if (strcmp(cmd, HELIUM_CMD_GET_PUBLICKEY) == 0) {
+  } else if (strcmp(cmd, HELIUM_CMD_GET_ECC_PUBLICKEY) == 0) {
 
     helium_get_ecc_publickey(p_cmd_buffer->pbuf + buf_idx);
 
